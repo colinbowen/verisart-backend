@@ -1,0 +1,44 @@
+Verisart Back-End Developer Task Details This task will involve implementing a couple of 
+RESTful endpoints consumed by the Verisart front-end app. Senarios User A creates a 
+certiﬁcate
+
+1. User A ﬁlls in the certiﬁcate details on the front-end and creates a certiﬁcate User A 
+updates a certiﬁcate
+1. User A views a list of their certiﬁcates, clicks on one to open the edit page 2. 
+The user updates the relevant information and saves the certiﬁcate User A transfers 
+a certiﬁcate
+1. User A views a list of their certiﬁcates, clicks on one to transfer 2. The user 
+enters the information of the person (User B) transferring to and submits. User B 
+accepts transferred certiﬁcates
+1. User B recieves an email with a link to accept the transferred certiﬁcate 2. 
+User B opens the accept transfer page and clicks "Accept" to ﬁnish the transfer 3. 
+User B views a list of their certiﬁcates which includes the newly accepted certiﬁcate. 
+Task 1. Implement the certificates[/:id] endpoint allowing to create, update and 
+delete certiﬁcates. Certiﬁcates owner is taken from the request headers 
+(i.e. Authorization or a custom header). 2. Implement the users/:userId/certificates 
+endpoint allowing to list all certiﬁcates owned by the user 3. Implement the 
+certificates/:id/transfers endpoing allowing to create and accept (aka update) 
+a transfer. 
+
+
+Resources / Payloads 
+
+certificate:
+{
+    id: 'string'
+title: 'string'
+createdAt: 'date',
+ownerId: 'string',
+year: 'number',
+note: 'string'
+transfer: <object representing the transfer state> 
+}
+
+
+transfer:
+
+{     to: 'email',     status: 'string', }
+
+User:
+
+{     id: 'string',     email: '',     name: '', }

@@ -50,19 +50,60 @@ func main() {
 	certs = append(certs, Certificate{ID: "5", Title: "Certificate 5", CreatedAt: 000000, OwnerID: "Owner5", Year: 2019, Note: "Note Here"})
 
 	// RouteHandlers / Endpoints
-	r.HandleFunc("/api/certs", getCertificates).Methods("GET", "POST", "DELETE", "UPDATE")
-	r.HandleFunc("/api/certs/{id}", getUserCertificate).Methods("GET")
-	r.HandleFunc("/api/transfer", transferCertificate).Methods("PUT")
+	// Create / Update / Delete Certificates
+	r.HandleFunc("/api/certs", certificateHandler).Methods("POST", "DELETE", "UPDATE")
+	// Get all user owned certificates
+	r.HandleFunc("/api/certs/{id}", userCertificatesHandler).Methods("GET")
+	// Transfer a certificate (Create / Accept)
+	r.HandleFunc("/api/transfer", transferCertificateHandler).Methods("PATCH")
 
 	log.Fatal(http.ListenAndServe(":8000", r))
 }
+
+func certificateHandler(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	if r.Method == "POST" {
+		// create certificate
+	}
+
+	if r.Method == "DELETE" {
+		// delete certificate
+		DeleteCertificate(params["id"], w)
+	}
+
+	if r.Method == "UPDATE" {
+		// update certificate
+
+	}
+}
+
+func userCertificatesHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r) // Get Params
+	// Loop though certificats and find one with id
+	for _, item := range certs {
+		if item.ID == params["id"] {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(&Certificate{})
+}
+
+func transferCertificateHandler(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+}
+
+// Function Handlers
 
 func getCertificates(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(certs)
 }
 
-func getUserCertificate(w http.ResponseWriter, r *http.Request) {
+func getUserCertificates(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r) // Get Params

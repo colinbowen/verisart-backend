@@ -88,7 +88,6 @@ func certificateHandler(w http.ResponseWriter, r *http.Request) {
 		// update certificate
 		updateCertificate(w, r)
 	}
-	fmt.Println(vars)
 }
 
 func userCertificatesHandler(w http.ResponseWriter, r *http.Request) {

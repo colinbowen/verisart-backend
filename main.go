@@ -7,24 +7,29 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 )
 
-var certs []Certificate
+var certsDB []certificate
 
-type User struct {
+type app struct {
+	Router *mux.Router
+	DB     *sql.DB
+}
+
+type user struct {
 	ID    string `json:"id"`
 	Email string `json:"email"`
 	Name  string `json:"name"`
 }
 
-type Certificate struct {
+type certificate struct {
 	ID        string `json:"id"`
 	Title     string `json:"title"`
 	CreatedAt int    `json:"createdAt"`
@@ -33,7 +38,7 @@ type Certificate struct {
 	Note      string `json:"note"`
 }
 
-type Transfer struct {
+type transfer struct {
 	To     string `json:"id"`
 	Status string `json:"status"`
 }
@@ -43,17 +48,20 @@ func main() {
 	r := mux.NewRouter()
 
 	// Mock Data - @todo - implement DB
-	certs = append(certs, Certificate{ID: "1", Title: "Certificate 1", CreatedAt: 000000, OwnerID: "Owner1", Year: 2019, Note: "Note Here"})
-	certs = append(certs, Certificate{ID: "2", Title: "Certificate 2", CreatedAt: 000000, OwnerID: "Owner2", Year: 2019, Note: "Note Here"})
-	certs = append(certs, Certificate{ID: "3", Title: "Certificate 3", CreatedAt: 000000, OwnerID: "Owner3", Year: 2019, Note: "Note Here"})
-	certs = append(certs, Certificate{ID: "4", Title: "Certificate 4", CreatedAt: 000000, OwnerID: "Owner4", Year: 2019, Note: "Note Here"})
-	certs = append(certs, Certificate{ID: "5", Title: "Certificate 5", CreatedAt: 000000, OwnerID: "Owner5", Year: 2019, Note: "Note Here"})
+	certsDB = append(certsDB, certificate{ID: "1", Title: "certificate 1", CreatedAt: 000000, OwnerID: "Owner1", Year: 2019, Note: "Note Here"})
+	certsDB = append(certsDB, certificate{ID: "6", Title: "certificate 6", CreatedAt: 000000, OwnerID: "Owner1", Year: 2019, Note: "Note Here"})
+	certsDB = append(certsDB, certificate{ID: "2", Title: "certificate 2", CreatedAt: 000000, OwnerID: "Owner2", Year: 2019, Note: "Note Here"})
+	certsDB = append(certsDB, certificate{ID: "3", Title: "certificate 3", CreatedAt: 000000, OwnerID: "Owner3", Year: 2019, Note: "Note Here"})
+	certsDB = append(certsDB, certificate{ID: "4", Title: "certificate 4", CreatedAt: 000000, OwnerID: "Owner4", Year: 2019, Note: "Note Here"})
+	certsDB = append(certsDB, certificate{ID: "5", Title: "certificate 5", CreatedAt: 000000, OwnerID: "Owner5", Year: 2019, Note: "Note Here"})
 
 	// RouteHandlers / Endpoints
+	// Get All certificates
+	r.HandleFunc("/api/certificates", certificateHandler).Methods("GET")
 	// Create / Update / Delete Certificates
-	r.HandleFunc("/api/certs", certificateHandler).Methods("POST", "DELETE", "UPDATE")
+	r.HandleFunc("/api/certificates/{id}", certificateHandler).Methods("POST", "DELETE", "PUT")
 	// Get all user owned certificates
-	r.HandleFunc("/api/certs/{id}", userCertificatesHandler).Methods("GET")
+	r.HandleFunc("/users/{userid}/certificates", userCertificatesHandler).Methods("GET")
 	// Transfer a certificate (Create / Accept)
 	r.HandleFunc("/api/transfer", transferCertificateHandler).Methods("PATCH")
 
@@ -61,38 +69,44 @@ func main() {
 }
 
 func certificateHandler(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
+	vars := mux.Vars(r)
+	if r.Method == "GET" {
+		// get certificate
+		getCertificates(w, r)
+	}
 	if r.Method == "POST" {
 		// create certificate
+		createCertificate(w, r)
 	}
 
 	if r.Method == "DELETE" {
 		// delete certificate
-		DeleteCertificate(params["id"], w)
+		deleteCertificate(w, r)
 	}
 
-	if r.Method == "UPDATE" {
+	if r.Method == "PUT" {
 		// update certificate
-
+		updateCertificate(w, r)
 	}
+	fmt.Println(vars)
 }
 
 func userCertificatesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
-	params := mux.Vars(r) // Get Params
-	// Loop though certificats and find one with id
-	for _, item := range certs {
-		if item.ID == params["id"] {
-			json.NewEncoder(w).Encode(item)
-			return
+	vars := mux.Vars(r)
+	var userCertificates []certificate
+	for _, item := range certsDB {
+		if item.ID == vars["userid"] {
+			userCertificates = append(userCertificates, item)
 		}
 	}
-	json.NewEncoder(w).Encode(&Certificate{})
+	json.NewEncoder(w).Encode(userCertificates)
+	return
 }
 
 func transferCertificateHandler(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
+	vars := mux.Vars(r)
+	fmt.Println(vars)
 
 }
 
@@ -100,40 +114,62 @@ func transferCertificateHandler(w http.ResponseWriter, r *http.Request) {
 
 func getCertificates(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(certs)
+	json.NewEncoder(w).Encode(certsDB)
 }
 
 func getUserCertificates(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	params := mux.Vars(r) // Get Params
+	vars := mux.Vars(r) // Get vars
 	// Loop though certificats and find one with id
-	for _, item := range certs {
-		if item.ID == params["id"] {
+	for _, item := range certsDB {
+		if item.ID == vars["id"] {
 			json.NewEncoder(w).Encode(item)
 			return
 		}
 	}
-	json.NewEncoder(w).Encode(&Certificate{})
+	json.NewEncoder(w).Encode(&certificate{})
 }
 
 func createCertificate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(certs)
+	json.NewEncoder(w).Encode(certsDB)
 
-	var certificate Certificate
+	var certificate certificate
 	_ = json.NewDecoder(r.Body).Decode(&certificate)
-	certificate.ID = strconv.Itoa(rand.Intn(10000000)) // Mock ID
-	//certificates = append(certificates, certificate)
+	certsDB = append(certsDB, certificate)
 	json.NewEncoder(w).Encode(certificate)
 }
 
 func deleteCertificate(w http.ResponseWriter, r *http.Request) {
-
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	for index, item := range certsDB {
+		if item.ID == vars["id"] {
+			certsDB = append(certsDB[:index], certsDB[index+1:]...)
+			break
+		}
+	}
+	json.NewEncoder(w).Encode(certsDB)
+	return
 }
 
 func updateCertificate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	for index, item := range certsDB {
+		if item.ID == vars["id"] {
+			certsDB = append(certsDB[:index], certsDB[index+1:]...)
 
+			var certificate certificate
+			_ = json.NewDecoder(r.Body).Decode(&certificate)
+			certsDB = append(certsDB, certificate)
+			json.NewEncoder(w).Encode(certificate)
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(certsDB)
+	return
 }
 
 func transferCertificate(w http.ResponseWriter, r *http.Request) {

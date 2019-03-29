@@ -1,15 +1,8 @@
-// get cert
-// delete cert
-// transfer cert
-// accept cert
-// create cert
-
 package main
 
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -56,36 +49,28 @@ func main() {
 	certsDB = append(certsDB, certificate{ID: "5", Title: "certificate 5", CreatedAt: 000000, OwnerID: "Owner5", Year: 2019, Note: "Note Here"})
 
 	// RouteHandlers / Endpoints
-	// Get All certificates
 	r.HandleFunc("/api/certificates", certificateHandler).Methods("GET")
-	// Create / Update / Delete Certificates
 	r.HandleFunc("/api/certificates/{id}", certificateHandler).Methods("POST", "DELETE", "PUT")
-	// Get all user owned certificates
 	r.HandleFunc("/users/{userid}/certificates", userCertificatesHandler).Methods("GET")
-	// Transfer a certificate (Create / Accept)
-	r.HandleFunc("/api/transfer", transferCertificateHandler).Methods("PATCH")
+	r.HandleFunc("/api/{certificatesID}/transfer", transferCertificateHandler).Methods("POST")
+	r.HandleFunc("/api/{certificatesID}/transfer", transferCertificateHandler).Methods("PUT")
 
 	log.Fatal(http.ListenAndServe(":8000", r))
 }
 
 func certificateHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
 	if r.Method == "GET" {
-		// get certificate
 		getCertificates(w, r)
 	}
 	if r.Method == "POST" {
-		// create certificate
 		createCertificate(w, r)
 	}
 
 	if r.Method == "DELETE" {
-		// delete certificate
 		deleteCertificate(w, r)
 	}
 
 	if r.Method == "PUT" {
-		// update certificate
 		updateCertificate(w, r)
 	}
 }
@@ -99,21 +84,25 @@ func userCertificatesHandler(w http.ResponseWriter, r *http.Request) {
 			userCertificates = append(userCertificates, item)
 		}
 	}
-	json.NewEncoder(w).Encode(userCertificates)
+	err := json.NewEncoder(w).Encode(userCertificates)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return
 }
 
 func transferCertificateHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	fmt.Println(vars)
-
+	// @TODO - IMPLEMENT TRANSFER CERTIFICATE
 }
 
 // Function Handlers
 
 func getCertificates(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(certsDB)
+	err := json.NewEncoder(w).Encode(certsDB)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func getUserCertificates(w http.ResponseWriter, r *http.Request) {
@@ -123,21 +112,35 @@ func getUserCertificates(w http.ResponseWriter, r *http.Request) {
 	// Loop though certificats and find one with id
 	for _, item := range certsDB {
 		if item.ID == vars["id"] {
-			json.NewEncoder(w).Encode(item)
+			err := json.NewEncoder(w).Encode(item)
+			if err != nil {
+				log.Fatal(err)
+			}
 			return
 		}
 	}
-	json.NewEncoder(w).Encode(&certificate{})
+	err := json.NewEncoder(w).Encode(&certificate{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func createCertificate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(certsDB)
-
+	err := json.NewEncoder(w).Encode(certsDB)
+	if err != nil {
+		log.Fatal(err)
+	}
 	var certificate certificate
-	_ = json.NewDecoder(r.Body).Decode(&certificate)
+	err = json.NewDecoder(r.Body).Decode(&certificate)
+	if err != nil {
+		log.Fatal(err)
+	}
 	certsDB = append(certsDB, certificate)
-	json.NewEncoder(w).Encode(certificate)
+	err = json.NewEncoder(w).Encode(certificate)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func deleteCertificate(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +152,10 @@ func deleteCertificate(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
-	json.NewEncoder(w).Encode(certsDB)
+	err := json.NewEncoder(w).Encode(certsDB)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return
 }
 
@@ -161,13 +167,23 @@ func updateCertificate(w http.ResponseWriter, r *http.Request) {
 			certsDB = append(certsDB[:index], certsDB[index+1:]...)
 
 			var certificate certificate
-			_ = json.NewDecoder(r.Body).Decode(&certificate)
+			err := json.NewDecoder(r.Body).Decode(&certificate)
+			if err != nil {
+				log.Fatal(err)
+			}
 			certsDB = append(certsDB, certificate)
-			json.NewEncoder(w).Encode(certificate)
+			err = json.NewEncoder(w).Encode(certificate)
+			if err != nil {
+				log.Fatal(err)
+			}
 			return
 		}
 	}
-	json.NewEncoder(w).Encode(certsDB)
+	err := json.NewEncoder(w).Encode(certsDB)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return
 }
 

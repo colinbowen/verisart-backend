@@ -52,7 +52,6 @@ func main() {
 	r.HandleFunc("/api/certificates", certificateHandler).Methods("GET")
 	r.HandleFunc("/api/certificates/{id}", certificateHandler).Methods("POST", "DELETE", "PUT")
 	r.HandleFunc("/users/{userid}/certificates", userCertificatesHandler).Methods("GET")
-	r.HandleFunc("/users/{userid}/certificates2", userCertificatesHandler2).Methods("GET")
 	r.HandleFunc("/api/{certificatesID}/transfer", transferCertificateHandler).Methods("POST")
 	r.HandleFunc("/api/{certificatesID}/transfer", transferCertificateHandler).Methods("PUT")
 
@@ -85,20 +84,10 @@ func userCertificatesHandler(w http.ResponseWriter, r *http.Request) {
 			userCertificates = append(userCertificates, item)
 		}
 	}
-	json.NewEncoder(w).Encode(userCertificates)
-	return
-}
-
-func userCertificatesHandler2(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	vars := mux.Vars(r)
-	var userCertificates []certificate
-	for _, item := range certsDB {
-		if item.ID == vars["userid"] {
-			userCertificates = append(userCertificates, item)
-		}
+	err := json.NewEncoder(w).Encode(userCertificates)
+	if err != nil {
+		log.Fatal(err)
 	}
-	json.NewEncoder(w).Encode(userCertificates)
 	return
 }
 
@@ -123,7 +112,10 @@ func getUserCertificates(w http.ResponseWriter, r *http.Request) {
 	// Loop though certificats and find one with id
 	for _, item := range certsDB {
 		if item.ID == vars["id"] {
-			json.NewEncoder(w).Encode(item)
+			err := json.NewEncoder(w).Encode(item)
+			if err != nil {
+				log.Fatal(err)
+			}
 			return
 		}
 	}
@@ -135,14 +127,20 @@ func getUserCertificates(w http.ResponseWriter, r *http.Request) {
 
 func createCertificate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(certsDB)
+	err := json.NewEncoder(w).Encode(certsDB)
+	if err != nil {
+		log.Fatal(err)
+	}
 	var certificate certificate
-	err := json.NewDecoder(r.Body).Decode(&certificate)
+	err = json.NewDecoder(r.Body).Decode(&certificate)
 	if err != nil {
 		log.Fatal(err)
 	}
 	certsDB = append(certsDB, certificate)
-	json.NewEncoder(w).Encode(certificate)
+	err = json.NewEncoder(w).Encode(certificate)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func deleteCertificate(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +172,10 @@ func updateCertificate(w http.ResponseWriter, r *http.Request) {
 				log.Fatal(err)
 			}
 			certsDB = append(certsDB, certificate)
-			json.NewEncoder(w).Encode(certificate)
+			err = json.NewEncoder(w).Encode(certificate)
+			if err != nil {
+				log.Fatal(err)
+			}
 			return
 		}
 	}
